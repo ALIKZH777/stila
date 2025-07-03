@@ -249,6 +249,7 @@
             transform: translateY(20px);
             opacity: 0;
             transition: transform 0.4s, box-shadow 0.4s;
+            cursor: pointer;
         }
         .project-card:hover {
             transform: translateY(-5px);
@@ -263,6 +264,57 @@
         .project-card-content h3 { font-size: 1.5rem; font-weight: 500; margin: 0 0 0.5rem; }
         .project-card-content p.category { font-size: 0.9rem; color: var(--accent-green); margin-bottom: 1rem; }
         .project-card-content p.description { font-size: 0.9rem; color: rgba(229, 229, 229, 0.7); line-height: 1.6; }
+
+        /* Project Detail View */
+        #project-detail-view {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: var(--dark-bg);
+            z-index: 10;
+            display: none;
+            padding: 4rem;
+            overflow-y: auto;
+        }
+        .project-detail-content {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 3rem;
+            max-width: 1200px;
+            margin: auto;
+            align-items: center;
+        }
+        #project-detail-img {
+            width: 100%;
+            max-height: 80vh;
+            object-fit: contain;
+            border-radius: 1rem;
+        }
+        #project-detail-title {
+            font-size: 3rem;
+            color: var(--accent-green);
+        }
+        #project-detail-category {
+             font-size: 1.2rem;
+             margin: 1rem 0;
+        }
+        #project-detail-description {
+            line-height: 1.8;
+            color: rgba(229, 229, 229, 0.8);
+        }
+        #back-to-projects-btn {
+            position: absolute;
+            top: 2.5rem;
+            left: 2.5rem;
+            font-size: 1rem;
+            cursor: pointer;
+            color: var(--light-text);
+            background: none;
+            border: none;
+        }
+
 
         /* Studio & Contact Panel */
         .content-section {
@@ -352,9 +404,12 @@
             .panel h2 {
                 font-size: 2.5rem;
             }
-            .close-panel-btn {
+            .close-panel-btn, #back-to-projects-btn {
                 top: 1.5rem;
                 left: 1.5rem;
+            }
+            .project-detail-content {
+                grid-template-columns: 1fr;
             }
         }
 
@@ -400,6 +455,17 @@
             <div class="close-panel-btn">&times;</div>
             <h2>پروژه‌ها</h2>
             <div class="projects-grid"></div>
+            <div id="project-detail-view">
+                <button id="back-to-projects-btn">&larr; بازگشت به پروژه‌ها</button>
+                <div class="project-detail-content">
+                    <div class="project-detail-text">
+                        <h2 id="project-detail-title"></h2>
+                        <p id="project-detail-category"></p>
+                        <p id="project-detail-description"></p>
+                    </div>
+                    <img id="project-detail-img" src="" alt="">
+                </div>
+            </div>
         </div>
         <div id="studio-panel" class="panel">
             <div class="close-panel-btn">&times;</div>
@@ -500,6 +566,9 @@
             const projectsGrid = document.querySelector('.projects-grid');
             const closeButtons = document.querySelectorAll('.close-panel-btn');
             
+            const projectDetailView = document.getElementById('project-detail-view');
+            const backToProjectsBtn = document.getElementById('back-to-projects-btn');
+
             const projectsData = [
                 { 
                     title: 'پروژه گارنت', 
@@ -529,17 +598,20 @@
 
             function populateProjects() {
                 projectsGrid.innerHTML = '';
-                projectsData.forEach(p => {
+                projectsData.forEach((p, index) => {
                     projectsGrid.innerHTML += `
-                        <div class="project-card">
+                        <div class="project-card" data-index="${index}">
                             <img src="${p.img}" alt="${p.title}" onerror="this.onerror=null;this.src='https://placehold.co/600x400/111111/e5e5e5?text=Image+Not+Found';">
                             <div class="project-card-content">
                                 <h3>${p.title}</h3>
                                 <p class="category">${p.category}</p>
-                                <p class="description">${p.description}</p>
                             </div>
                         </div>
                     `;
+                });
+                
+                document.querySelectorAll('.project-card').forEach(card => {
+                    card.addEventListener('click', showProjectDetail);
                 });
             }
             populateProjects();
@@ -553,7 +625,7 @@
                 
                 if (activePanel) {
                     transitionSound.currentTime = 0;
-                    transitionSound.play().catch(e => console.log("Audio play interrupted"));
+                    transitionSound.play().catch(e => {});
                     activePanel.classList.remove('open');
                     gsap.to(centerLogoContainer, { 
                         opacity: 1, 
@@ -580,10 +652,10 @@
                  const targetPanel = document.getElementById(panelId);
                  if(targetPanel) {
                     transitionSound.currentTime = 0;
-                    transitionSound.play().catch(e => console.log("Audio play interrupted"));
+                    transitionSound.play().catch(e => {});
                     gsap.to(centerLogoContainer, {
                         opacity: 0,
-                        scale: 5, // ZOOM IN EFFECT
+                        scale: 5,
                         duration: 0.8,
                         ease: 'power3.inOut',
                         onComplete: () => {
@@ -602,11 +674,36 @@
                  }
             }
             
+            function showProjectDetail(event) {
+                const card = event.currentTarget;
+                const projectIndex = card.dataset.index;
+                const project = projectsData[projectIndex];
+                
+                document.getElementById('project-detail-img').src = project.img;
+                document.getElementById('project-detail-title').textContent = project.title;
+                document.getElementById('project-detail-category').textContent = project.category;
+                document.getElementById('project-detail-description').textContent = project.description;
+                
+                gsap.to(projectsGrid, { opacity: 0, duration: 0.5, onComplete: () => {
+                    projectsGrid.style.display = 'none';
+                    projectDetailView.style.display = 'block';
+                    gsap.fromTo(projectDetailView, {opacity: 0, y: 50}, {opacity: 1, y: 0, duration: 0.8, ease: 'power3.out'});
+                }});
+            }
+            
+            backToProjectsBtn.addEventListener('click', () => {
+                gsap.to(projectDetailView, {opacity: 0, y: 50, duration: 0.8, ease: 'power3.in', onComplete: () => {
+                    projectDetailView.style.display = 'none';
+                    projectsGrid.style.display = 'grid';
+                    gsap.to(projectsGrid, { opacity: 1, duration: 0.5 });
+                }});
+            });
+
             navLinks.forEach(link => {
                 link.addEventListener('click', (e) => {
                     e.preventDefault();
                     clickSound.currentTime = 0;
-                    clickSound.play().catch(e => console.log("Audio play interrupted"));
+                    clickSound.play().catch(e => {});
                     const targetId = link.dataset.target;
                     if (activePanel && activePanel.id === targetId) return;
                     closeAllPanels(() => openPanel(targetId));
