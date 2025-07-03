@@ -240,6 +240,7 @@
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
             gap: 2rem;
+            transition: opacity 0.5s ease;
         }
         .project-card {
             background: rgba(0,0,0,0.2);
@@ -286,10 +287,14 @@
             margin: auto;
             align-items: center;
         }
+        #project-detail-img-container {
+            overflow: hidden;
+            border-radius: 1rem;
+        }
         #project-detail-img {
             width: 100%;
             max-height: 80vh;
-            object-fit: contain;
+            object-fit: cover;
             border-radius: 1rem;
         }
         #project-detail-title {
@@ -458,12 +463,14 @@
             <div id="project-detail-view">
                 <button id="back-to-projects-btn">&larr; بازگشت به پروژه‌ها</button>
                 <div class="project-detail-content">
+                    <div id="project-detail-img-container">
+                        <img id="project-detail-img" src="" alt="">
+                    </div>
                     <div class="project-detail-text">
                         <h2 id="project-detail-title"></h2>
                         <p id="project-detail-category"></p>
                         <p id="project-detail-description"></p>
                     </div>
-                    <img id="project-detail-img" src="" alt="">
                 </div>
             </div>
         </div>
@@ -568,6 +575,8 @@
             
             const projectDetailView = document.getElementById('project-detail-view');
             const backToProjectsBtn = document.getElementById('back-to-projects-btn');
+            const detailImgContainer = document.getElementById('project-detail-img-container');
+            const detailText = document.querySelector('.project-detail-text');
 
             const projectsData = [
                 { 
@@ -687,12 +696,13 @@
                 gsap.to(projectsGrid, { opacity: 0, duration: 0.5, onComplete: () => {
                     projectsGrid.style.display = 'none';
                     projectDetailView.style.display = 'block';
-                    gsap.fromTo(projectDetailView, {opacity: 0, y: 50}, {opacity: 1, y: 0, duration: 0.8, ease: 'power3.out'});
+                    gsap.fromTo(detailImgContainer, {xPercent: -100, opacity: 0}, {xPercent: 0, opacity: 1, duration: 0.8, ease: 'power3.out'});
+                    gsap.fromTo(detailText, {xPercent: 100, opacity: 0}, {xPercent: 0, opacity: 1, duration: 0.8, ease: 'power3.out', delay: 0.2});
                 }});
             }
             
             backToProjectsBtn.addEventListener('click', () => {
-                gsap.to(projectDetailView, {opacity: 0, y: 50, duration: 0.8, ease: 'power3.in', onComplete: () => {
+                gsap.to([detailImgContainer, detailText], {opacity: 0, xPercent: 0, duration: 0.5, ease: 'power3.in', onComplete: () => {
                     projectDetailView.style.display = 'none';
                     projectsGrid.style.display = 'grid';
                     gsap.to(projectsGrid, { opacity: 1, duration: 0.5 });
